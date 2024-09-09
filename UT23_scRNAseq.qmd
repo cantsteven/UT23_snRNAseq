@@ -85,7 +85,7 @@ ut23.combined <- subset(ut23.combined, subset = nFeature_RNA > 200 & nFeature_RN
 
 ```{r}
 # run sctransform for normalization 
-ut23.norm <- SCTransform(ut23.norm, vars.to.regress = "percent.mt", verbose = FALSE)
+ut23.norm <- SCTransform(ut23.combined, vars.to.regress = "percent.mt", verbose = FALSE)
 
 # dimensionality reduction by PCA and UMAP
 # PCA analysis
