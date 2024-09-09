@@ -10,6 +10,7 @@ library(Seurat)
 library(patchwork)
 library(hdf5r) #for reading in h5 files 
 library(sctransform) #Dhivya recommends using sctransorm for data transformation 
+library(glmGamPoi) #speeds up SCTransform 
 ```
 
 **Reading in the data**
@@ -56,7 +57,7 @@ save(ut23.combined, file="ut23.seurat.merged.Rdata")
 savehistory("ut23.seurat.merge.R")
 ```
 
-**Suerat processing**
+**Suerat pre-processing**
 
 ```{r}
 # The [[ operator can add columns to object metadata. This is a great place to stash QC stats
@@ -75,10 +76,30 @@ plot1 <- FeatureScatter(ut23.combined, feature1 = "nCount_RNA", feature2 = "perc
 plot2 <- FeatureScatter(ut23.combined, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
 plot1 + plot2
 
+# subsetting data 
 ut23.combined <- subset(ut23.combined, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
 
+```
+
+**Data Normalization**
+
+```{r}
 # run sctransform for normalization 
-ut23.combined <- SCTransform(ut23.combined, vars.to.regress = "percent.mt", verbose = FALSE)
+ut23.norm <- SCTransform(ut23.norm, vars.to.regress = "percent.mt", verbose = FALSE)
 
+# dimensionality reduction by PCA and UMAP
+# PCA analysis
+ut23.norm <- RunPCA(ut23.norm, verbose = FALSE)
 
+# UMAP takes the top principal components and reduces them further to 2 dimensions 
+ut23.norm <- RunUMAP(ut23.norm, dims = 1:30, verbose = FALSE)
+
+# Identifies the nearest neighbors for each cell, creates a NKK graph
+ut23.norm <- FindNeighbors(ut23.norm, dims = 1:30, verbose = FALSE)
+
+# Clusters cells based on their expression profiles
+ut23.norm <- FindClusters(ut23.norm, verbose = FALSE)
+
+# Visualizes the results of clustering 
+DimPlot(ut23.norm, label = TRUE)
 ```
