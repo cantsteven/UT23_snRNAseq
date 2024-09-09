@@ -11,9 +11,12 @@ library(patchwork)
 library(hdf5r) #for reading in h5 files 
 library(sctransform) #Dhivya recommends using sctransorm for data transformation 
 library(glmGamPoi) #speeds up SCTransform 
+
+
+
 ```
 
-**Reading in the data**
+**Reading in the Data**
 
 A seurat object was created for each h5 file
 
@@ -57,7 +60,7 @@ save(ut23.combined, file="ut23.seurat.merged.Rdata")
 savehistory("ut23.seurat.merge.R")
 ```
 
-**Suerat pre-processing**
+**Suerat Pre-Processing**
 
 ```{r}
 # The [[ operator can add columns to object metadata. This is a great place to stash QC stats
@@ -81,7 +84,9 @@ ut23.combined <- subset(ut23.combined, subset = nFeature_RNA > 200 & nFeature_RN
 
 ```
 
-**Data Normalization**
+**Data Normalization and Clustering**
+
+Helpful tutorial: https://hbctraining.github.io/scRNA-seq_online/lessons/07_SC_clustering_cells_SCT.html
 
 ```{r}
 # run sctransform for normalization 
@@ -89,17 +94,77 @@ ut23.norm <- SCTransform(ut23.combined, vars.to.regress = "percent.mt", verbose 
 
 # dimensionality reduction by PCA and UMAP
 # PCA analysis
-ut23.norm <- RunPCA(ut23.norm, verbose = FALSE)
+ut23.norm2 <- RunPCA(ut23.norm, verbose = FALSE)
 
 # UMAP takes the top principal components and reduces them further to 2 dimensions 
-ut23.norm <- RunUMAP(ut23.norm, dims = 1:30, verbose = FALSE)
+ut23.norm2 <- RunUMAP(ut23.norm2, dims = 1:30, verbose = FALSE)
 
 # Identifies the nearest neighbors for each cell, creates a NKK graph
-ut23.norm <- FindNeighbors(ut23.norm, dims = 1:30, verbose = FALSE)
+# Here you can change the resolution of the graphs
+ut23.norm2 <- FindNeighbors(ut23.norm2, dims = 1:30, verbose = FALSE)
 
-# Clusters cells based on their expression profiles
-ut23.norm <- FindClusters(ut23.norm, verbose = FALSE)
+# Clusters cells based on their expression profiles, looking at different resolutions 
+ut23.norm3 <- FindClusters(ut23.norm2, verbose = FALSE, resolution = c(0.4, 0.6, 0.8, 1.0, 1.4))
 
-# Visualizes the results of clustering 
-DimPlot(ut23.norm, label = TRUE)
+# Now we can visulize the clusters at several different resolutions (change the number after integrated_snn_res.)
+# Assign identity of clusters using SCT_snn_res.XX
+Idents(object = ut23.norm3) <- "SCT_snn_res.0.4"
+
+# The plot is changed when you change the code above 
+DimPlot(ut23.norm3,
+        reduction = "umap",
+        label = TRUE,
+        #split.by = "orig.ident", #to include experimental groups
+        label.size = 6)
+```
+
+**Segregation of clusters by experimental group**
+
+```{r}
+# Segregation of clusters by experimental group  
+ n_cells <- FetchData(ut23.norm3, 
+                     vars = c("ident", "orig.ident")) %>%
+        dplyr::count(ident, orig.ident)
+
+# Barplot of number of cells per cluster by sample
+ggplot(n_cells, aes(x=ident, y=n, fill=orig.ident)) +
+    geom_bar(position=position_dodge(), stat="identity")
+
+# We can also look at the proportion of cells in each cluster 
+ggplot(ut23.norm3@meta.data) +
+    geom_bar(aes(x=SCT_snn_res.0.4, fill=orig.ident), position=position_fill()) 
+```
+
+**Visualize cells per cluster for the three experimental groups**
+
+```{r}
+# UMAP of cells in each cluster by sample
+DimPlot(ut23.norm3, 
+        label = TRUE, 
+        split.by = "orig.ident")  + NoLegend()
+```
+
+Segregation of clusters by cell cycle phase
+
+```{r}
+# Explore whether clusters segregate by cell cycle phase
+DimPlot(ut23.norm3,
+        label = TRUE, 
+        split.by = "Phase")  + NoLegend()
+```
+
+Exploring known cell type markers
+
+```{r}
+# find markers for every cluster compared to all remaining cells, report only the positive ones
+ut23.markers <- FindAllMarkers(ut23.norm3, only.pos = TRUE)
+ut23.markers %>%
+    group_by(cluster) %>%
+    dplyr::filter(avg_log2FC > 1) %>%
+    slice_head(n = 10) %>%
+    ungroup() -> top10
+
+DoHeatmap(ut23.norm3, features = top10$gene) + NoLegend()
+
+# did not work 
 ```
