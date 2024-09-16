@@ -12,8 +12,6 @@ library(hdf5r) #for reading in h5 files
 library(sctransform) #Dhivya recommends using sctransorm for data transformation 
 library(glmGamPoi) #speeds up SCTransform 
 
-
-
 ```
 
 **Reading in the Data**
@@ -111,11 +109,14 @@ ut23.norm3 <- FindClusters(ut23.norm2, verbose = FALSE, resolution = c(0.4, 0.6,
 Idents(object = ut23.norm3) <- "SCT_snn_res.0.4"
 
 # The plot is changed when you change the code above 
-DimPlot(ut23.norm3,
+umap_ut23.norm3 <- DimPlot(ut23.norm3,
         reduction = "umap",
         label = TRUE,
         #split.by = "orig.ident", #to include experimental groups
         label.size = 6)
+
+ggsave(filename = "DimPlot_ut23.norm3.png", plot = umap_ut23.norm3, width = 8, height = 6, dpi = 300)
+
 ```
 
 **Segregation of clusters by experimental group**
@@ -133,27 +134,38 @@ ggplot(n_cells, aes(x=ident, y=n, fill=orig.ident)) +
 # We can also look at the proportion of cells in each cluster 
 ggplot(ut23.norm3@meta.data) +
     geom_bar(aes(x=SCT_snn_res.0.4, fill=orig.ident), position=position_fill()) 
-```
 
-**Visualize cells per cluster for the three experimental groups**
-
-```{r}
 # UMAP of cells in each cluster by sample
 DimPlot(ut23.norm3, 
         label = TRUE, 
         split.by = "orig.ident")  + NoLegend()
 ```
 
-Segregation of clusters by cell cycle phase
+**Segregation of clusters by cell cycle phase**
 
 ```{r}
 # Explore whether clusters segregate by cell cycle phase
+
+# Load the cell cycle genes 
+cc.genes <- Seurat::cc.genes
+
+ut23.norm3 <- CellCycleScoring(ut23.norm3, 
+                               s.features = cc.genes$s.genes, 
+                               g2m.features = cc.genes$g2m.genes,
+                               set.ident = TRUE)
+
 DimPlot(ut23.norm3,
         label = TRUE, 
         split.by = "Phase")  + NoLegend()
+
+
 ```
 
-Exploring known cell type markers
+**Exploring known cell type markers**
+
+First I went through the list and searched for well known cell type markers, and made guesses about each cell type.
+
+Then I exported the full list of genes for each cluster, copy pasted them into the website enrichr and checked the panglaoDB cell output. I used this to confirm my guesses.
 
 ```{r}
 # find markers for every cluster compared to all remaining cells, report only the positive ones
@@ -166,5 +178,13 @@ ut23.markers %>%
 
 DoHeatmap(ut23.norm3, features = top10$gene) + NoLegend()
 
-# did not work 
+#Code for exporting gene lists of each cluster 
+cluster.output <- ut23.markers %>%
+  filter(cluster == 18) %>%
+  select(gene) 
+
+gene_list <- paste(cluster.output$gene, collapse = "\n")
+
+cat(gene_list)
+
 ```
