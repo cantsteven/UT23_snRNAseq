@@ -2,7 +2,7 @@
 ## Overview
 This repository contains code for the data analysis of "Mycobacterium vaccae immunization ameliorates the inflammatory environment in the aging brain" (Guerin et al., 2025)
 
-There are two quarto documents used for this analysis: 
+There are two quarto documents used for this analysis. The "other" folder contains various test files with code that was not used in the publication. 
 ### UT23_scRNAseq.qmd 
 
 This Quarto file documents the single-nucleus RNA-seq analysis workflow using the Seurat package in R. It covers the steps from data import (reading .h5 count matrices), sample metadata annotation, quality control, filtering, normalization, batch integration with Harmony, clustering, marker gene identification, initial visualization, cell type annotation, and saves a processed Seurat object. 
