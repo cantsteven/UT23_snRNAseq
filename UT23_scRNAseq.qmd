@@ -7,10 +7,8 @@ editor: visual
 ```{r}
 library(tidyverse)
 library(Seurat)
-library(patchwork)
 library(hdf5r) #for reading in h5 files 
 library(sctransform) 
-library(reticulate)
 library(glmGamPoi) # For SCTransform, this is incompatible with R Version 4.4 so I had to manually install a version for 4.3 
 library(harmony)
 ```
@@ -613,13 +611,15 @@ DimPlot(ut23.integrated,
 DotPlot(ut23.integrated, markers, assay="RNA")
 ```
 
-### Save seurat object
+### Save Seurat object
+
+This generates the final ut23_object, which is used in ut23_graphs_2.qmd
 
 ```{r}
 saveRDS(ut23.integrated, "/stor/work/Fonken/UT23_snRNAseq/local_ut23/ut23_object.rds")
 ```
 
-### Removing Ttr positive cells:
+### Looking into Ttr (Choroid plexus) contamination: 
 
 Below is some testing I did to identify Ttr positive cells:
 
