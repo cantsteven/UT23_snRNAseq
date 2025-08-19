@@ -1,0 +1,129 @@
+
+### Clustering the Microglia Cluster
+
+There is a function canned FindSubCluster but I don't think it actually reclusters the data, there aren't a lot of resources online about how to do this but I'm roughly following this:\
+<https://github.com/satijalab/seurat/issues/4320>\
+\
+There seem to be several ways to do it and I'm basically just totally re-doing the clustering with the subsetted object.
+
+```{r}
+# Subsetting one cluster
+microglia_subcluster <- subset(ut23.object, idents = "Microglia")
+
+# Changing the default assay from SCT to RNA
+DefaultAssay(microglia_subcluster) <- "RNA"
+
+# Running SCTransform 
+microglia_subcluster.list <- SplitObject(microglia_subcluster, split.by="sample_id")
+microglia_subcluster.list <- lapply(X = microglia_subcluster.list, 
+                       FUN = SCTransform, 
+                       method = "glmGamPoi", 
+                       return.only.var.genes = FALSE)
+var.features.microglia <- SelectIntegrationFeatures(object.list = microglia_subcluster.list, nfeatures = 500)
+
+microglia_subcluster.sct <- merge(x = microglia_subcluster.list[[1]], y = microglia_subcluster.list[2:length(microglia_subcluster.list)], merge.data=TRUE)
+VariableFeatures(microglia_subcluster.sct) <- var.features.microglia
+microglia_subcluster.sct <- RunPCA(microglia_subcluster.sct, verbose = FALSE)
+
+# Using batch as covariates 
+microglia_subcluster.sct <- RunHarmony(microglia_subcluster.sct, assay.use="SCT", group.by.vars = "batch")
+microglia_subcluster.sct <- RunUMAP(microglia_subcluster.sct, reduction = "harmony", dims = 1:10)
+microglia_subcluster.sct <- FindNeighbors(microglia_subcluster.sct, reduction = "harmony", dims = 1:10) 
+
+# Finding clusters 
+microglia_subcluster.sct <- FindClusters(object = microglia_subcluster.sct,
+                               resolution = c(0.2, 0.4, 0.6, 0.8, 1.0, 1.4))
+
+# Assign identity of clusters
+Idents(object = microglia_subcluster.sct) <- "SCT_snn_res.0.2"
+  
+# Assign identity of clusters
+#Set the cell type in the metadata 
+#int_microglia$microglia.subcluster <- Idents(int_microglia)
+
+#Dim plot 
+DimPlot(microglia_subcluster.sct,
+        pt.size = 1
+       ) 
+
+FeaturePlot(microglia_subcluster.sct, 
+            reduction = "umap", 
+            features = c("Cx3cr1"), 
+            order = TRUE,
+            min.cutoff = 'q10', 
+            pt.size = 1,
+            label = TRUE)
+
+#cell counts in microglia subcluster
+n_cells_micro <- FetchData(microglia_subcluster.sct, 
+                     vars = c("SCT_snn_res.0.2", "group_id", "sample_id")) %>%
+        dplyr::count(SCT_snn_res.0.2, group_id, sample_id)
+
+
+# Barplot of number of cells per celltype by sample
+ggplot(n_cells_micro, aes(x=SCT_snn_res.0.2, y=n, fill=group_id)) +
+    geom_bar(position=position_dodge(), stat="identity") +
+    geom_text(aes(label=n), vjust = -.2, position=position_dodge(1))
+
+
+# Assume your Seurat object is named 'microglia_subcluster.sct'
+# Step 1: Get the variable features you previously identified
+all_variable_features <- VariableFeatures(microglia_subcluster.sct)
+
+# Step 2: Set the identity class to clusters if not already set
+microglia_subcluster.sct <- SetIdent(microglia_subcluster.sct, value = "SCT_snn_res.0.2")  # Change to your cluster metadata column name
+
+# Step 3: Create a list to store HVGs for each cluster
+hvg_list <- list()
+
+# Step 4: Loop through each cluster and store the variable features
+for (cluster in unique(Idents(microglia_subcluster.sct))) {
+  cluster_subset <- subset(microglia_subcluster.sct, idents = cluster)
+  hvg_list[[as.character(cluster)]] <- intersect(all_variable_features, rownames(cluster_subset))
+}
+
+# hvg_list now contains the highly variable genes for each cluster
+
+
+
+
+
+```
+
+```{r fig.height = 5, fig.width = 12}
+# Compute number of cells per celltype
+n_cells_micro <- FetchData(int_microglia, 
+                     vars = c("microglia.subcluster", "group_id")) %>%
+        dplyr::count(microglia.subcluster, group_id)
+
+# Barplot of number of cells per celltype by sample
+ggplot(n_cells_micro, aes(x=microglia.subcluster, y=n, fill=group_id)) +
+    geom_bar(position=position_dodge(), stat="identity") +
+    geom_text(aes(label=n), vjust = -.2, position=position_dodge(1))
+```
+
+```         
+```
+
+```{r}
+gse_yvav_gk <- importCP(gse_yvav,type = 'gsea')
+gse_yvav_gk$gsea_df$ID <- gse_yvav_gk$gsea_df$Description
+
+gse_yvav_gk$gsea_df <- rbind(
+  head(gse_yvav_gk$gsea_df[order(gse_yvav_gk$gsea_df$enrichmentScore, decreasing = TRUE), ], 10),
+  tail(gse_yvav_gk$gsea_df[order(gse_yvav_gk$gsea_df$enrichmentScore, decreasing = TRUE), ], 10)
+)
+
+gse_yvav_graph <- plotGSEA(gse_yvav_gk, plot_type = "bar", main_text_size = 15)
+```
+
+```{r fig.height = 3, fig.width = 50}
+FeaturePlot(ut23.object, 
+            reduction = "umap", 
+            features = c("Ptprd"), 
+            order = TRUE,
+            min.cutoff = 'q10', 
+            split.by = "sample_id",
+            pt.size = 2,
+            label = TRUE)
+```
