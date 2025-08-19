@@ -7,6 +7,7 @@ editor: visual
 ---
 
 ```{r}
+# Required packages: 
 library(tidyverse)
 library(patchwork) #You need version 1.3.0 install_github("thomasp85/patchwork@v1.3.0")
 # you also must have install.packages("devtools")- if this has problems restart R 
@@ -17,33 +18,21 @@ library(Seurat)
 library(EnhancedVolcano)
 library(ggthemes)
 library(ggprism)
-library(DESeq2)
 library(pheatmap)
 library(EnhancedVolcano)
-library(DEsingle) # From bioconductor 
 library(MAST) #From bioconductor
 library(harmony)
-library(ggpubr)
-
-# Weird packages for Pseudobulking (I don't think I need any of these anymore)
-library(SingleCellExperiment)
 library(Matrix)
-library(Matrix.utils) # Note this package is not available on CRAN anymore, I had to install like this: remotes::install_github("cvarrichio/Matrix.utils")
-library(data.table)
+library(dittoSeq)
 
-# Packages for Go and KEGG analysis 
+# Packages for Go and KEGG analysis:  
 library(org.Rn.eg.db) #BiocManager::install("org.Rn.eg.db")
 library(AnnotationDbi) #BiocManager::install("AnnotationDbi")
 library(clusterProfiler) #BiocManager::install("clusterProfiler")
 library(genekitr) #I prefer the graphs this makes over clusterProfiler
 library(scales) # for wrapping long text in graphs 
 library(fgsea) # only using this for mapIdsList
-
-# Heatmap
-library(dittoSeq)
 ```
-
-Why can't I use Seurat 5.0? Seurat needs SeruatObject, which needs Matrix. The newest version of Matrix is only compatible with R 4.4, the compute server runs R 4.3.
 
 ### Reading in the Data
 
@@ -104,13 +93,13 @@ sample_dimplot <- DimPlot(ut23.object,
 Idents(ut23.object) <- ut23.object$cluster_id
 
 cluster_id_dimplot <- DimPlot(ut23.object,
-        pt.size = 2,
-        reduction = "umap",
-        label = FALSE,
-        label.size = 2, 
-        repel = FALSE) + 
-        theme_prism(base_size = 10) + 
-        scale_color_manual(values = cell_type_colors)   
+    pt.size = 2,
+    reduction = "umap",
+    label = FALSE,
+    label.size = 2, 
+    repel = FALSE) + 
+    theme_prism(base_size = 10) + 
+    scale_color_manual(values = cell_type_colors)   
 
 # D: Compute number of cells per celltype------
 n_cells <- FetchData(ut23.object, 
@@ -164,13 +153,6 @@ top_graphs
 fig1a / top_graphs / free(cellexpression_dotplot) + plot_annotation(tag_levels = 'A') + plot_layout(height = c(1,1,1.5)) & theme(plot.tag = element_text(face = "bold"))
 
 ggsave("/stor/work/Fonken/UT23_snRNAseq/local_ut23/Graphs/ut23_dimplots.png", width = 10, height = 9, dpi = 300, units = "in")
-
-```
-
-### 
-
-```{r}
-# Create a vector of all marker genes
 
 ```
 
@@ -296,7 +278,11 @@ print(results_list[["Oligodendrocyte Precursors"]]$volcano_plot)
 saveRDS(results_list, file = "/stor/work/Fonken/UT23_snRNAseq/local_ut23/dge_results.rds")
 ```
 
-### Figure 2: Gene Set Enrichment Analysis (GO and KEGG) and Volcano Plots for Microglia
+## DEGs and GSEA Graphs: 
+
+I ended up creating different code chunks for graphing the DEGs and GSEA analysis for each cell type as each needed a bit of customization.
+
+### DEGs and GSEA for Microglia
 
 ```{r fig.height = 15, fig.width = 12}
 # Read in the list of DEGs
@@ -569,261 +555,6 @@ ggsave("/stor/work/Fonken/UT23_snRNAseq/local_ut23/Graphs/microglia_ut23_volcano
 
 write.csv(yvav_kegg_df, "/stor/work/Fonken/UT23_snRNAseq/local_ut23/yvav_kegg_micro_df.csv")
 
-```
-
-### Figure 3: Heat map of Inflammatory Genes Among Cell Types
-
-Genes associated with aging were taken from this paper:
-
-**Hallmarks of aging-based dual-purpose disease and age-associated targets predicted using PandaOmics AI-powered discovery engine**
-
-<https://www.aging-us.com/article/203960/text#f2>
-
-```{r fig.height = 12, fig.width = 10}
-# read the dge results results file 
-dge_results <- readRDS("/stor/work/Fonken/UT23_snRNAseq/local_ut23/dge_results.rds")
-
-# Gene list
-aging_genes <- c("Tlr4",
-           "Mmp9",
-           "Tlr2",
-           "Casp1",
-           "Casp3",
-           "Vegfa",
-           "Egfr",
-           "Akt1",
-           "Mapk8",
-           "Il1b",
-           "Tnf",
-           "Itgb2",
-           "Il6",
-           "Cat",
-           "Ppara",
-           "Jak2",
-           "Jak1",
-           "Cxcr4",
-           "Mmp2",
-           "Kit",
-           "Mtor",
-           "Esr1",
-           "Tgfb1",
-           "Spp1",
-           "Hspa5",
-           "Sirt1",
-           "Ar",
-           "Casp8",
-           "Itgam",
-           "Hdac1",
-           "Fgf2",
-           "Mapk1",
-           "Gsk3b",
-           "Ep300",
-           "Hdac9",
-           "Mapk14",
-           "Kdr",
-           "Igf1",
-           "Insr",
-           "Ngf",
-           "Pten",
-           "Vdr",
-           "Ikbkb",
-           "Chuk",
-           "Traf6",
-           "Parp1",
-           "Dnmt1",
-           "Src",
-           "Rhoa",
-           "Ptk2",
-           "Itgav",
-           "Cxcl12",
-           "Hgf",
-           "Lox",
-           "Adam17",
-           "Sod2",
-           "Igf1r",
-           "Igf2",
-           "Egln1",
-           "Tgfbr2",
-           "Rock1",
-           "Notch1",
-           "Ezh2",
-           "Abl1",
-           "Hdac6")
-
-#aggregating expression for heatmap
-aggr.ut23 <- AggregateExpression(ut23.object, 
-                    assays = "RNA",
-                    return.seurat = TRUE,
-                    group.by = c("sample_id", "cluster_id"),
-                    normalization.method = "LogNormalize")
-
- "#FFB6C1", "#FFD700", "#6495ED"
-
-#dittoseq heatmap (uses pheatmap)
-dittoHeatmap(aggr.ut23, 
-             aging_genes, 
-             annot.by = c("cluster_id", "sample_id"),
-             heatmap.colors = colorRampPalette(c("#1f77b4", "white", "#ff7f0e"))(50),
-             annot.colors = c("#A58AFF", "#FB61D7", "#C49A00", "#53B400", "#00B6EB", "#00C094", "#F8766D","#FFC0CB", "#FFB6C1", "#FFADD8","#FFDF00", "#FFD700", "#FFC700", "#6BA3FF", "#6495ED", "#5479C9"))
-             
-```
-
-Antigen presentation genes
-
-```{r}
-{r fig.height = 12, fig.width = 10}
-# read the dge results results file 
-
-# Gene list
-antigen_genes <- c("Calm2", "Calm1.1", "Chgb", "Atp1b1", "Olfm1", "Ndufa4", "Dpp10", "Ptprd", "Atp6v0c", "Ubb", "Nkain2", "Stmn3", "Slc25a4", "Hsp90ab1", "Rnasek", "Csmd1", "Hsp90aa1", "Caln1", 
-"Dlg2", "Cox7b", "Plp1", "Nlgn1", "Tenm2", "Mdga2", "Cox7c", "Scg5", "Cox4i1", "Atp5if1", 
-"Calm1", "Fam155a", "Mt-co2", "Dynll1", "Atp5mg", "Caly", "Ptprg", "Actb", "Etl4")
-
-
-#aggregating expression for heatmap
-aggr.ut23 <- AggregateExpression(ut23.object, 
-                    assays = "RNA",
-                    return.seurat = TRUE,
-                    group.by = c("sample_id", "cluster_id"),
-                    normalization.method = "LogNormalize")
-
- "#FFB6C1", "#FFD700", "#6495ED"
-
-#dittoseq heatmap (uses pheatmap)
-dittoHeatmap(aggr.ut23, 
-             antigen_genes, 
-             annot.by = c("cluster_id", "sample_id"),
-             heatmap.colors = colorRampPalette(c("#1f77b4", "white", "#ff7f0e"))(50),
-             annot.colors = c("#A58AFF", "#FB61D7", "#C49A00", "#53B400", "#00B6EB", "#00C094", "#F8766D","#FFC0CB", "#FFB6C1", "#FFADD8","#FFDF00", "#FFD700", "#FFC700", "#6BA3FF", "#6495ED", "#5479C9"))
-```
-
-### Clustering the Microglia Cluster
-
-There is a function canned FindSubCluster but I don't think it actually reclusters the data, there aren't a lot of resources online about how to do this but I'm roughly following this:\
-<https://github.com/satijalab/seurat/issues/4320>\
-\
-There seem to be several ways to do it and I'm basically just totally re-doing the clustering with the subsetted object.
-
-```{r}
-# Subsetting one cluster
-microglia_subcluster <- subset(ut23.object, idents = "Microglia")
-
-# Changing the default assay from SCT to RNA
-DefaultAssay(microglia_subcluster) <- "RNA"
-
-# Running SCTransform 
-microglia_subcluster.list <- SplitObject(microglia_subcluster, split.by="sample_id")
-microglia_subcluster.list <- lapply(X = microglia_subcluster.list, 
-                       FUN = SCTransform, 
-                       method = "glmGamPoi", 
-                       return.only.var.genes = FALSE)
-var.features.microglia <- SelectIntegrationFeatures(object.list = microglia_subcluster.list, nfeatures = 500)
-
-microglia_subcluster.sct <- merge(x = microglia_subcluster.list[[1]], y = microglia_subcluster.list[2:length(microglia_subcluster.list)], merge.data=TRUE)
-VariableFeatures(microglia_subcluster.sct) <- var.features.microglia
-microglia_subcluster.sct <- RunPCA(microglia_subcluster.sct, verbose = FALSE)
-
-# Using batch as covariates 
-microglia_subcluster.sct <- RunHarmony(microglia_subcluster.sct, assay.use="SCT", group.by.vars = "batch")
-microglia_subcluster.sct <- RunUMAP(microglia_subcluster.sct, reduction = "harmony", dims = 1:10)
-microglia_subcluster.sct <- FindNeighbors(microglia_subcluster.sct, reduction = "harmony", dims = 1:10) 
-
-# Finding clusters 
-microglia_subcluster.sct <- FindClusters(object = microglia_subcluster.sct,
-                               resolution = c(0.2, 0.4, 0.6, 0.8, 1.0, 1.4))
-
-# Assign identity of clusters
-Idents(object = microglia_subcluster.sct) <- "SCT_snn_res.0.2"
-  
-# Assign identity of clusters
-#Set the cell type in the metadata 
-#int_microglia$microglia.subcluster <- Idents(int_microglia)
-
-#Dim plot 
-DimPlot(microglia_subcluster.sct,
-        pt.size = 1
-       ) 
-
-FeaturePlot(microglia_subcluster.sct, 
-            reduction = "umap", 
-            features = c("Cx3cr1"), 
-            order = TRUE,
-            min.cutoff = 'q10', 
-            pt.size = 1,
-            label = TRUE)
-
-#cell counts in microglia subcluster
-n_cells_micro <- FetchData(microglia_subcluster.sct, 
-                     vars = c("SCT_snn_res.0.2", "group_id", "sample_id")) %>%
-        dplyr::count(SCT_snn_res.0.2, group_id, sample_id)
-
-
-# Barplot of number of cells per celltype by sample
-ggplot(n_cells_micro, aes(x=SCT_snn_res.0.2, y=n, fill=group_id)) +
-    geom_bar(position=position_dodge(), stat="identity") +
-    geom_text(aes(label=n), vjust = -.2, position=position_dodge(1))
-
-
-# Assume your Seurat object is named 'microglia_subcluster.sct'
-# Step 1: Get the variable features you previously identified
-all_variable_features <- VariableFeatures(microglia_subcluster.sct)
-
-# Step 2: Set the identity class to clusters if not already set
-microglia_subcluster.sct <- SetIdent(microglia_subcluster.sct, value = "SCT_snn_res.0.2")  # Change to your cluster metadata column name
-
-# Step 3: Create a list to store HVGs for each cluster
-hvg_list <- list()
-
-# Step 4: Loop through each cluster and store the variable features
-for (cluster in unique(Idents(microglia_subcluster.sct))) {
-  cluster_subset <- subset(microglia_subcluster.sct, idents = cluster)
-  hvg_list[[as.character(cluster)]] <- intersect(all_variable_features, rownames(cluster_subset))
-}
-
-# hvg_list now contains the highly variable genes for each cluster
-
-
-
-
-
-```
-
-```{r fig.height = 5, fig.width = 12}
-# Compute number of cells per celltype
-n_cells_micro <- FetchData(int_microglia, 
-                     vars = c("microglia.subcluster", "group_id")) %>%
-        dplyr::count(microglia.subcluster, group_id)
-
-# Barplot of number of cells per celltype by sample
-ggplot(n_cells_micro, aes(x=microglia.subcluster, y=n, fill=group_id)) +
-    geom_bar(position=position_dodge(), stat="identity") +
-    geom_text(aes(label=n), vjust = -.2, position=position_dodge(1))
-```
-
-```         
-```
-
-```{r}
-gse_yvav_gk <- importCP(gse_yvav,type = 'gsea')
-gse_yvav_gk$gsea_df$ID <- gse_yvav_gk$gsea_df$Description
-
-gse_yvav_gk$gsea_df <- rbind(
-  head(gse_yvav_gk$gsea_df[order(gse_yvav_gk$gsea_df$enrichmentScore, decreasing = TRUE), ], 10),
-  tail(gse_yvav_gk$gsea_df[order(gse_yvav_gk$gsea_df$enrichmentScore, decreasing = TRUE), ], 10)
-)
-
-gse_yvav_graph <- plotGSEA(gse_yvav_gk, plot_type = "bar", main_text_size = 15)
-```
-
-```{r fig.height = 3, fig.width = 50}
-FeaturePlot(ut23.object, 
-            reduction = "umap", 
-            features = c("Ptprd"), 
-            order = TRUE,
-            min.cutoff = 'q10', 
-            split.by = "sample_id",
-            pt.size = 2,
-            label = TRUE)
 ```
 
 ### DEGs and GSEA for Astrocytes
@@ -2378,6 +2109,10 @@ free(volcano_yvav + volcano_amav) / (gse_yvav_graph + gse_amav_graph) / (yvav_ke
 ggsave("/stor/work/Fonken/UT23_snRNAseq/local_ut23/Graphs/oligopre_ut23_volcanogsea.png", dpi = 300, width = 12, height = 15)
 ```
 
+## Inflammation Related Gene Intersections
+
+Here I check the intersections of the DEGs for each cell type with a list of inflammation related DEGs:
+
 ### Inflammatory gene intersections: Microglia
 
 ```{r}
@@ -2634,7 +2369,9 @@ oligopre_amav_down <- oligopre_amav %>%
 oligopre_amav_down_common <- intersect(toupper(oligopre_amav_down), toupper(inflam_genes))
 ```
 
-Inflammatory Genes Comparison Figure
+### Inflammatory Genes Comparison Figure
+
+This code chunk outputs the graphs for Figure 5
 
 ```{r fig.height = 4, fig.width = 7}
 # YVAV Down
@@ -2770,6 +2507,8 @@ ggsave("/stor/work/Fonken/UT23_snRNAseq/local_ut23/Graphs/inflam/amav_up_graph.p
 
 ### Percent of total DEGs graphs
 
+Here I tested graphing the percents (did not end up using this)
+
 ```{r}
 # YVAV Down
 yvav_down <- data.frame(
@@ -2893,6 +2632,8 @@ ggsave("/stor/work/Fonken/UT23_snRNAseq/local_ut23/Graphs/inflam/amav_up_graph_p
 ```
 
 ### Overall Genes Totals
+
+Here I am graphing the total DEGs upregulated or downregulated in each condition.
 
 ```{r fig.height = 4, fig.width = 7}
 # YVAV Down
