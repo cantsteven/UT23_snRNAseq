@@ -11,6 +11,11 @@ This Quarto file documents the single-nucleus RNA-seq analysis workflow using th
 
 This Quarto file reads in the Seurat object processed in UT23_scRNAseq.qmd, normalizes and annotates the data, generates multiple plots summarizing cell type distributions and marker expression, and conducts differential gene expression analysis between experimental groups for various cell types. It then visualizes the results with volcano plots and gene set enrichment analyses (GO and KEGG), producing figures for each cell type. 
 
+There is also a .CSV file that contains a list of inflammatory genes used for part of the analysis: 
+### inflammatorygenelist.csv
+
+All significant DEGs within each cell type cluster were compared to this list of 757 known neuroinflammation related genes (nCounter® Human Neuroinflammation Panel, nanoString). 
+
 ## Dependencies 
 The following R packages were used in each Quarto document: 
 ### UT23_scRNAseq.qmd 
