@@ -2,7 +2,8 @@
 ## Overview
 This repository contains code for the data analysis of "Mycobacterium vaccae immunization ameliorates the inflammatory environment in the aging brain" (Guerin et al., 2025)
 
-There are two quarto documents used for this analysis. The "other" folder contains various test files with code that was not used in the publication. 
+There are two quarto documents used for this analysis. The "other" folder contains various test files with code that was not used in the publication. Finally, there is a .CSV file that contains a list of inflammatory genes used for part of the analysis. 
+
 ### UT23_scRNAseq.qmd 
 
 This Quarto file documents the single-nucleus RNA-seq analysis workflow using the Seurat package in R. It covers the steps from data import (reading .h5 count matrices), sample metadata annotation, quality control, filtering, normalization, batch integration with Harmony, clustering, marker gene identification, initial visualization, cell type annotation, and saves a processed Seurat object. 
@@ -11,7 +12,6 @@ This Quarto file documents the single-nucleus RNA-seq analysis workflow using th
 
 This Quarto file reads in the Seurat object processed in UT23_scRNAseq.qmd, normalizes and annotates the data, generates multiple plots summarizing cell type distributions and marker expression, and conducts differential gene expression analysis between experimental groups for various cell types. It then visualizes the results with volcano plots and gene set enrichment analyses (GO and KEGG), producing figures for each cell type. 
 
-There is also a .CSV file that contains a list of inflammatory genes used for part of the analysis: 
 ### inflammatorygenelist.csv
 
 All significant DEGs within each cell type cluster were compared to this list of 757 known neuroinflammation related genes (nCounter® Human Neuroinflammation Panel, nanoString). 
