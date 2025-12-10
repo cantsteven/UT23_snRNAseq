@@ -1,4 +1,4 @@
-# Guerin et al., 2025: UT23_snRNAseq Publication
+# Guerin et al., 2026: UT23_snRNAseq Publication
 ## Overview
 This repository contains code for the data analysis of "Mycobacterium vaccae immunization ameliorates the inflammatory environment in the aging brain" (Guerin et al., 2025)
 
